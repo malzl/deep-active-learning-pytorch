@@ -17,7 +17,7 @@ class ActiveLearning:
 
     def __init__(self, dataObj, cfg):
         self.dataObj = dataObj
-        self.sampler = Sampling(dataObj=dataObj,cfg=cfg)
+        self.sampler = Sampling(dataObj=dataObj, cfg=cfg)
         self.cfg = cfg
         
     def sample_from_uSet(self, clf_model, lSet, uSet, trainDataset, supportingModels=None):
@@ -67,8 +67,6 @@ class ActiveLearning:
             waslatent = clf_model.penultimate_active
             wastrain = clf_model.training
             clf_model.penultimate_active = True
-            # if self.cfg.TRAIN.DATASET == "IMAGENET":
-            #     clf_model.cuda(0)
             clf_model.eval()
             coreSetSampler = CoreSetMIPSampling(cfg=self.cfg, dataObj=self.dataObj)
             activeSet, uSet = coreSetSampler.query(lSet=lSet, uSet=uSet, clf_model=clf_model, dataset=trainDataset)
@@ -100,4 +98,3 @@ class ActiveLearning:
             raise NotImplementedError
 
         return activeSet, uSet
-        

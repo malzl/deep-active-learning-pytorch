@@ -29,7 +29,6 @@ class Data:
     1. getDataset
     2. getAugmentations
     3. getDataLoaders
-
     """
     def __init__(self, cfg):
         """
@@ -40,18 +39,17 @@ class Data:
         self.dataset = cfg.DATASET.NAME
         self.data_dir = cfg.DATASET.ROOT_DIR
         self.datasets_accepted = cfg.DATASET.ACCEPTED
-        # self.target_dir = {"test": cfg.DATASET.TEST_DIR, "train": cfg.DATASET.TRAIN_DIR, "val": cfg.DATASET.VAL_DIR}
         self.eval_mode = False
         self.aug_method = cfg.DATASET.AUG_METHOD
         self.rand_augment_N = 1 if cfg is None else cfg.RANDAUG.N
         self.rand_augment_M = 5 if cfg is None else cfg.RANDAUG.M
+        self.subset_ratio = cfg.DATASET.SUBSET_RATIO
 
     def about(self):
         """
         Show all properties of this class.
         """
         print(self.__dict__)
-
 
     def make_data_lists(self, exp_dir):
         """
@@ -74,7 +72,6 @@ class Data:
         
         with open(test, 'w') as filehandle:
             filehandle.writelines("%s\n" % index for index in test_list)
-
 
     def getPreprocessOps(self):
         """
@@ -101,7 +98,6 @@ class Data:
                 norm_std = [0.3081,]
             elif self.dataset == "TINYIMAGENET":
                 ops = [transforms.RandomResizedCrop(64)]
-                # Using ImageNet values 
                 norm_mean = [0.485, 0.456, 0.406]
                 norm_std = [0.229, 0.224, 0.225]
             elif self.dataset in ["SVHN"]:
@@ -113,12 +109,8 @@ class Data:
 
             if not self.eval_mode and (self.aug_method == 'simclr'):
                 ops.insert(1, get_simclr_ops(input_shape=cfg.TRAIN.IM_SIZE))
-
             elif not self.eval_mode and (self.aug_method == 'randaug'):
-                #N and M values are taken from Experiment Section of RandAugment Paper
-                #Though RandAugment paper works with WideResNet model
                 ops.append(RandAugmentPolicy(N=self.rand_augment_N, M=self.rand_augment_M))
-
             elif not self.eval_mode and (self.aug_method == 'hflip'):
                 ops.append(transforms.RandomHorizontalFlip())
 
@@ -129,13 +121,9 @@ class Data:
                 ops = [ops[0], transforms.ToTensor(), transforms.Normalize(norm_mean, norm_std)]
             else:
                 print("Preprocess Operations Selected ==> ", ops)
-                # logger.info("Preprocess Operations Selected ==> ", ops)
             return ops
         else:
-            print("Either the specified {} dataset is not added or there is no if condition in getDataset function of Data class".format(self.dataset))
-            logger.info("Either the specified {} dataset is not added or there is no if condition in getDataset function of Data class".format(self.dataset))
             raise NotImplementedError
-
 
     def getDataset(self, save_dir, isTrain=True, isDownload=False):
         """
@@ -143,16 +131,11 @@ class Data:
         
         INPUT:
         save_dir: String, It specifies the path where dataset will be saved if downloaded.
-        
-        preprocess_steps(optional): List, Contains the ordered operations used for preprocessing the data.
-        
         isTrain (optional): Bool, If true then Train partition is downloaded else Test partition.
-        
         isDownload (optional): Bool, If true then dataset is saved at path specified by "save_dir".
         
         OUTPUT:
         (On Success) Returns the tuple of dataset instance and length of dataset.
-        (On Failure) Returns Message as <dataset> not specified.
         """
         self.eval_mode = True
         test_preops_list = self.getPreprocessOps()
@@ -165,48 +148,36 @@ class Data:
             preprocess_steps = test_preops_list
         preprocess_steps = transforms.Compose(preprocess_steps)
 
-
-
         if self.dataset == "MNIST":
-            mnist = MNIST(save_dir, train=isTrain, transform=preprocess_steps, test_transform=test_preprocess_steps, download=isDownload)
+            mnist = MNIST(save_dir, train=isTrain, transform=preprocess_steps, test_transform=test_preprocess_steps, download=isDownload, subset_ratio=self.subset_ratio)
             return mnist, len(mnist)
-
         elif self.dataset == "CIFAR10":
-            cifar10 = CIFAR10(save_dir, train=isTrain, transform=preprocess_steps, test_transform=test_preprocess_steps, download=isDownload)
+            cifar10 = CIFAR10(save_dir, train=isTrain, transform=preprocess_steps, test_transform=test_preprocess_steps, download=isDownload, subset_ratio=self.subset_ratio)
             return cifar10, len(cifar10)
-
         elif self.dataset == "CIFAR100":
-            cifar100 = CIFAR100(save_dir, train=isTrain, transform=preprocess_steps,  test_transform=test_preprocess_steps, download=isDownload)
+            cifar100 = CIFAR100(save_dir, train=isTrain, transform=preprocess_steps,  test_transform=test_preprocess_steps, download=isDownload, subset_ratio=self.subset_ratio)
             return cifar100, len(cifar100)
-
         elif self.dataset == "SVHN":
             if isTrain:
-                svhn = SVHN(save_dir, split='train', transform=preprocess_steps,  test_transform=test_preprocess_steps, download=isDownload)
+                svhn = SVHN(save_dir, split='train', transform=preprocess_steps,  test_transform=test_preprocess_steps, download=isDownload, subset_ratio=self.subset_ratio)
             else:
-                svhn = SVHN(save_dir, split='test', transform=preprocess_steps,  test_transform=test_preprocess_steps, download=isDownload)
+                svhn = SVHN(save_dir, split='test', transform=preprocess_steps,  test_transform=test_preprocess_steps, download=isDownload, subset_ratio=self.subset_ratio)
             return svhn, len(svhn)
-
         elif self.dataset == "TINYIMAGENET":
             if isTrain:
-                # tiny = datasets.ImageFolder(save_dir+'/train', transform=preprocess_steps)
-                tiny = TinyImageNet(save_dir, split='train', transform=preprocess_steps, test_transform=test_preprocess_steps)
+                tiny = TinyImageNet(save_dir, split='train', transform=preprocess_steps, test_transform=test_preprocess_steps, subset_ratio=self.subset_ratio)
             else:
-                # tiny = datasets.ImageFolder(save_dir+'/val', transform=preprocess_steps)
-                tiny = TinyImageNet(save_dir, split='val', transform=preprocess_steps, test_transform=test_preprocess_steps)
+                tiny = TinyImageNet(save_dir, split='val', transform=preprocess_steps, test_transform=test_preprocess_steps, subset_ratio=self.subset_ratio)
             return tiny, len(tiny)
-        
         elif self.dataset == 'IMBALANCED_CIFAR10':
-            im_cifar10 = IMBALANCECIFAR10(save_dir, train=isTrain, transform=preprocess_steps, test_transform=test_preprocess_steps)
+            im_cifar10 = IMBALANCECIFAR10(save_dir, train=isTrain, transform=preprocess_steps, test_transform=test_preprocess_steps, subset_ratio=self.subset_ratio)
             return im_cifar10, len(im_cifar10)
-
         elif self.dataset ==  'IMBALANCED_CIFAR100':
-            im_cifar100 = IMBALANCECIFAR100(save_dir, train=isTrain, transform=preprocess_steps, test_transform=test_preprocess_steps)
+            im_cifar100 = IMBALANCECIFAR100(save_dir, train=isTrain, transform=preprocess_steps, test_transform=test_preprocess_steps, subset_ratio=self.subset_ratio)
             return im_cifar100, len(im_cifar100)
-
         else:
-            print("Either the specified {} dataset is not added or there is no if condition in getDataset function of Data class".format(self.dataset))
-            logger.info("Either the specified {} dataset is not added or there is no if condition in getDataset function of Data class".format(self.dataset))
             raise NotImplementedError
+
 
 
     def makeLUVSets(self, train_split_ratio, val_split_ratio, data, seed_id, save_dir):

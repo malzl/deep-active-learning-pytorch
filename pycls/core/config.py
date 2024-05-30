@@ -6,9 +6,7 @@
 """Configuration file (powered by YACS)."""
 
 import os
-
 from yacs.config import CfgNode as CN
-
 
 # Global config object
 _C = CN()
@@ -22,7 +20,7 @@ cfg = _C
 # ---------------------------------------------------------------------------- #
 # Number of GPUs to use (applies to both training and testing)
 _C.NUM_GPUS = 1
-# Output directory (will be created at the projec root)
+# Output directory (will be created at the project root)
 _C.OUT_DIR = 'output'
 # Experiment directory
 _C.EXP_DIR = ''
@@ -33,7 +31,7 @@ _C.CFG_DEST = 'config.yaml'
 # Note that non-determinism may still be present due to non-deterministic
 # operator implementations in GPU operator libraries
 _C.RNG_SEED = None
-# Folder name where best model logs etc are saved. "auto" creates a timestamp based folder 
+# Folder name where best model logs etc are saved. "auto" creates a timestamp-based folder 
 _C.EXP_NAME = 'auto' 
 # Which GPU to run on
 _C.GPU_ID = 0
@@ -41,7 +39,6 @@ _C.GPU_ID = 0
 _C.LOG_DEST = 'file'
 # Log period in iters
 _C.LOG_PERIOD = 10
-
 
 #------------------------------------------------------------------------------#
 # VAAL Options (Taken from https://arxiv.org/abs/1904.00370)
@@ -79,7 +76,6 @@ _C.MODEL.NUM_CLASSES = 10
 # Loss function (see pycls/models/loss.py for options)
 _C.MODEL.LOSS_FUN = 'cross_entropy'
 
-
 # ---------------------------------------------------------------------------- #
 # Batch norm options
 # ---------------------------------------------------------------------------- #
@@ -93,11 +89,9 @@ _C.BN.USE_PRECISE_STATS = False
 _C.BN.NUM_SAMPLES_PRECISE = 1024
 # Initialize the gamma of the final BN of each block to zero
 _C.BN.ZERO_INIT_FINAL_GAMMA = False
-
 # Use a different weight decay for BN layers
 _C.BN.USE_CUSTOM_WEIGHT_DECAY = False
 _C.BN.CUSTOM_WEIGHT_DECAY = 0.0
-
 
 # ---------------------------------------------------------------------------- #
 # Optimizer options
@@ -209,8 +203,6 @@ _C.DATA_LOADER.PIN_MEMORY = True
 # ---------------------------------------------------------------------------- #
 _C.CUDNN = CN()
 # Perform benchmarking to select the fastest CUDNN algorithms to use
-# Note that this may increase the memory usage and will likely not result
-# in overall speedups when variable size inputs are used (e.g. COCO training)
 _C.CUDNN.BENCHMARK = False
 
 # ---------------------------------------------------------------------------- #
@@ -218,7 +210,7 @@ _C.CUDNN.BENCHMARK = False
 # ---------------------------------------------------------------------------- #
 _C.DATASET = CN()
 _C.DATASET.NAME = None
-# For Tiny ImageNet dataset, ROOT_DIR must be set to the dataset folder ("data/tiny-imagenet-200/"). For others, the outder "data" folder where all datasets can be stored is expected.
+# For Tiny ImageNet dataset, ROOT_DIR must be set to the dataset folder ("data/tiny-imagenet-200/"). For others, the outer "data" folder where all datasets can be stored is expected.
 _C.DATASET.ROOT_DIR = None
 # Specifies the proportion of data in train set that should be considered as the validation data
 _C.DATASET.VAL_RATIO = 0.1
@@ -226,6 +218,8 @@ _C.DATASET.VAL_RATIO = 0.1
 _C.DATASET.AUG_METHOD = 'hflip' 
 # Accepted Datasets
 _C.DATASET.ACCEPTED = ['MNIST','SVHN','CIFAR10','CIFAR100','TINYIMAGENET', 'IMBALANCED_CIFAR10', 'IMBALANCED_CIFAR100']
+# Proportion of data to use for training
+_C.DATASET.SUBSET_RATIO = 1.0
 
 def assert_cfg():
     """Checks config values invariants."""
@@ -240,7 +234,7 @@ def assert_cfg():
     assert _C.TEST.BATCH_SIZE % _C.NUM_GPUS == 0, \
         'Test mini-batch size should be a multiple of NUM_GPUS.'
 
-    #our assertions
+    # our assertions
     if _C.ACTIVE_LEARNING.SAMPLING_FN == "uncertainty_uniform_discretize":
         assert _C.ACTIVE_LEARNING.N_BINS !=0, \
         "The number of bins used cannot be 0. Please provide a number >0 for {} sampling function"\
@@ -252,13 +246,11 @@ def custom_dump_cfg(temp_cfg):
     with open(cfg_file, 'w') as f:
         _C.dump(stream=f)
 
-
 def dump_cfg(cfg):
     """Dumps the config to the output directory."""
     cfg_file = os.path.join(cfg.EXP_DIR, cfg.CFG_DEST)
     with open(cfg_file, 'w') as f:
         cfg.dump(stream=f)
-
 
 def load_cfg(out_dir, cfg_dest='config.yaml'):
     """Loads config from specified output directory."""
