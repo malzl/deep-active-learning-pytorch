@@ -96,32 +96,18 @@ def is_eval_epoch(cur_epoch):
 
 
 def main(cfg):
+    device = torch.device("cpu")
+    kwargs = {'num_workers': cfg.DATA_LOADER.NUM_WORKERS, 'pin_memory': cfg.DATA_LOADER.PIN_MEMORY}
 
-    # Setting up GPU args
-    use_cuda = (cfg.NUM_GPUS > 0) and torch.cuda.is_available()
-    device = torch.device("cuda" if use_cuda else "cpu")
-    kwargs = {'num_workers': cfg.DATA_LOADER.NUM_WORKERS, 'pin_memory': cfg.DATA_LOADER.PIN_MEMORY} if use_cuda else {}
-
-    # Auto assign a RNG_SEED when not supplied a value
     if cfg.RNG_SEED is None:
         cfg.RNG_SEED = np.random.randint(100)
 
-    # Using specific GPU
-    # os.environ['NVIDIA_VISIBLE_DEVICES'] = str(cfg.GPU_ID)
-    # os.environ['CUDA_VISIBLE_DEVICES'] = '0'
-    # print("Using GPU : {}.\n".format(cfg.GPU_ID))
-
-    # Getting the output directory ready (default is "/output")
     cfg.OUT_DIR = os.path.join(os.path.abspath('..'), cfg.OUT_DIR)
     if not os.path.exists(cfg.OUT_DIR):
         os.mkdir(cfg.OUT_DIR)
-    # Create "DATASET/MODEL TYPE" specific directory
     dataset_out_dir = os.path.join(cfg.OUT_DIR, cfg.DATASET.NAME, cfg.MODEL.TYPE)
     if not os.path.exists(dataset_out_dir):
         os.makedirs(dataset_out_dir)
-    # Creating the experiment directory inside the dataset specific directory 
-    # all logs, labeled, unlabeled, validation sets are stroed here 
-    # E.g., output/CIFAR10/resnet18/{timestamp or cfg.EXP_NAME based on arguments passed}
     if cfg.EXP_NAME == 'auto':
         now = datetime.now()
         exp_dir = f'{now.year}_{now.month}_{now.day}_{now.hour}{now.minute}{now.second}'
@@ -136,10 +122,7 @@ def main(cfg):
         print("Experiment Directory Already Exists: {}. Reusing it may lead to loss of old logs in the directory.\n".format(exp_dir))
     cfg.EXP_DIR = exp_dir
 
-    # Save the config file in EXP_DIR
     dump_cfg(cfg)
-
-    # Setup Logger
     lu.setup_logging(cfg)
 
     # Dataset preparing steps
@@ -377,8 +360,8 @@ def train_epoch(train_loader, model, loss_fun, optimizer, train_meter, cur_epoch
     len_train_loader = len(train_loader)
     for cur_iter, (inputs, labels) in enumerate(train_loader):
         #ensuring that inputs are floatTensor as model weights are
-        inputs = inputs.type(torch.cuda.FloatTensor)
-        inputs, labels = inputs.cuda(), labels.cuda(non_blocking=True)
+        inputs = inputs.type(torch.FloatTensor)
+        inputs, labels = inputs, labels
         # Perform the forward pass
         preds = model(inputs)
         # Compute the loss
@@ -448,8 +431,8 @@ def test_epoch(test_loader, model, test_meter, cur_epoch):
     for cur_iter, (inputs, labels) in enumerate(test_loader):
         with torch.no_grad():
             # Transfer the data to the current GPU device
-            inputs, labels = inputs.cuda(), labels.cuda(non_blocking=True)
-            inputs = inputs.type(torch.cuda.FloatTensor)
+            inputs, labels = inputs, labels
+            inputs = inputs.type(torch.FloatTensor)
             # Compute the predictions
             preds = model(inputs)
             # Compute the errors

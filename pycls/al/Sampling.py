@@ -4,6 +4,7 @@
 
 import numpy as np 
 import torch
+from scipy import stats
 from statistics import mean
 import gc
 import os
@@ -344,7 +345,6 @@ class Sampling:
         For more details refer equation 4 in 
         http://openaccess.thecvf.com/content_cvpr_2018/papers/Beluch_The_Power_of_CVPR_2018_paper.pdf
         """
-        from scipy import stats
         T = len(clf_models)
 
         for cmodel in clf_models:
@@ -368,7 +368,7 @@ class Sampling:
                     ens_preds[:, i] = temp_pred
             _, mode_cnt = stats.mode(ens_preds, 1)
             temp_varr = 1.0 - (mode_cnt / T * 1.0)
-            var_r_scores[temp_i:temp_i + x_u.shape[0]] = temp_varr
+            var_r_scores[temp_i:temp_i + x_u.shape[0], 0] = temp_varr.reshape(-1)
 
             temp_i = temp_i + x_u.shape[0]
 

@@ -1,0 +1,43 @@
+#EXP_NAME: 'Resnet18_ENS_1'
+RNG_SEED: 1
+DATASET:
+  NAME: MNIST 
+  ROOT_DIR: './data'
+  VAL_RATIO: 0.0016666
+  AUG_METHOD: 'hflip'
+  SUBSET_RATIO: 1.0
+MODEL:
+  TYPE: alexnet
+  NUM_CLASSES: 10
+OPTIM:
+  TYPE: 'sgd'
+  BASE_LR: 0.025
+  LR_POLICY: cos
+  LR_MULT: 0.1
+  # STEPS: [0, 60, 120, 160, 200] 
+  MAX_EPOCH: 10
+  MOMENTUM: 0.9
+  NESTEROV: True
+  WEIGHT_DECAY: 0.0003
+  GAMMA: 0.1
+TRAIN:
+  SPLIT: train
+  BATCH_SIZE: 96
+  IM_SIZE: 32
+  EVAL_PERIOD: 2
+TEST:
+  SPLIT: test
+  BATCH_SIZE: 200
+  IM_SIZE: 32
+DATA_LOADER:
+  NUM_WORKERS: 4
+CUDNN:
+  BENCHMARK: True
+ACTIVE_LEARNING:
+  INIT_L_RATIO: 0.00034
+  BUDGET_SIZE: 20
+  SAMPLING_FN: 'ensemble_var_R' # do not change this for ensemble learning
+  MAX_ITER: 2
+ENSEMBLE:
+  NUM_MODELS: 3
+  MODEL_TYPE: ['alexnet']

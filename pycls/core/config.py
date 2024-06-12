@@ -175,7 +175,7 @@ _C.RANDAUG.M = 5
 # #  ACTIVE LEARNING options
 # #-------------------------------------------------------------------------------#
 _C.ACTIVE_LEARNING = CN()
-_C.ACTIVE_LEARNING.SAMPLING_FN = 'random' # 'entropy', 'margin', 'vaal', 'coreset', 'ensemble_var_R'
+_C.ACTIVE_LEARNING.SAMPLING_FN = 'random' # 'entropy', 'margin', 'vaal', 'coreset', 'ensemble_var_R', 'batchbald'
 _C.ACTIVE_LEARNING.ACTIVATE = False
 _C.ACTIVE_LEARNING.LSET_PATH = ''
 _C.ACTIVE_LEARNING.USET_PATH = ''

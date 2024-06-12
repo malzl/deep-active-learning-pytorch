@@ -1,0 +1,3 @@
+PYTHONPATH=$(pwd) python tools/train_al.py --cfg=configs/mnist/al/Experiment_1_BALD.yaml --al=bald --exp-name=YOUR_EXPERIMENT3
+
+PYTHONPATH=$(pwd) python tools/ensemble_al.py --cfg=configs/mnist/al/Ensemble.yaml --exp-name=Ensemble_NM  

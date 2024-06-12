@@ -69,9 +69,8 @@ def is_eval_epoch(cur_epoch):
     return (cur_epoch + 1) % cfg.TRAIN.EVAL_PERIOD == 0 or (cur_epoch + 1) == cfg.OPTIM.MAX_EPOCH
 
 def main(cfg):
-    use_cuda = (cfg.NUM_GPUS > 0) and torch.cuda.is_available()
-    device = torch.device("cuda" if use_cuda else "cpu")
-    kwargs = {'num_workers': cfg.DATA_LOADER.NUM_WORKERS, 'pin_memory': cfg.DATA_LOADER.PIN_MEMORY} if use_cuda else {}
+    device = torch.device("cpu")
+    kwargs = {}
 
     if cfg.RNG_SEED is None:
         cfg.RNG_SEED = np.random.randint(100)
@@ -105,8 +104,8 @@ def main(cfg):
     train_data, train_size = data_obj.getDataset(save_dir=cfg.DATASET.ROOT_DIR, isTrain=True, isDownload=True)
     test_data, test_size = data_obj.getDataset(save_dir=cfg.DATASET.ROOT_DIR, isTrain=False, isDownload=True)
     
-    print("\nDataset {} Loaded Sucessfully.\nTotal Train Size: {} and Total Test Size: {}\n".format(cfg.DATASET.NAME, train_size, test_size))
-    logger.info("Dataset {} Loaded Sucessfully. Total Train Size: {} and Total Test Size: {}\n".format(cfg.DATASET.NAME, train_size, test_size))
+    print("\nDataset {} Loaded Successfully.\nTotal Train Size: {} and Total Test Size: {}\n".format(cfg.DATASET.NAME, train_size, test_size))
+    logger.info("Dataset {} Loaded Successfully. Total Train Size: {} and Total Test Size: {}\n".format(cfg.DATASET.NAME, train_size, test_size))
     
     lSet_path, uSet_path, valSet_path = data_obj.makeLUVSets(train_split_ratio=cfg.ACTIVE_LEARNING.INIT_L_RATIO, val_split_ratio=cfg.DATASET.VAL_RATIO, data=train_data, seed_id=cfg.RNG_SEED, save_dir=cfg.EXP_DIR)
 
@@ -286,9 +285,6 @@ def test_model(test_loader, checkpoint_file, cfg, cur_episode):
 def train_epoch(train_loader, model, loss_fun, optimizer, train_meter, cur_epoch, cfg, clf_iter_count, clf_change_lr_iter, clf_max_iter):
     global plot_episode_xvalues, plot_episode_yvalues, plot_epoch_xvalues, plot_epoch_yvalues, plot_it_x_values, plot_it_y_values
 
-    if cfg.NUM_GPUS > 1:
-        train_loader.sampler.set_epoch(cur_epoch)
-
     lr = optim.get_epoch_lr(cfg, cur_epoch)
     if cfg.OPTIM.TYPE == "sgd":
         optim.set_lr(optimizer, lr)
@@ -316,7 +312,7 @@ def train_epoch(train_loader, model, loss_fun, optimizer, train_meter, cur_epoch
             print('Training Epoch: {}/{}\tIter: {}/{}'.format(cur_epoch+1, cfg.OPTIM.MAX_EPOCH, cur_iter, len(train_loader)))
 
         train_meter.iter_toc()
-        train_meter.update_stats(top1_err=top1_err, loss=loss, lr=lr, mb_size=inputs.size(0) * cfg.NUM_GPUS)
+        train_meter.update_stats(top1_err=top1_err, loss=loss, lr=lr, mb_size=inputs.size(0))
         train_meter.log_iter_stats(cur_epoch, cur_iter)
         train_meter.iter_tic()
     train_meter.log_epoch_stats(cur_epoch)
@@ -339,10 +335,10 @@ def test_epoch(test_loader, model, test_meter, cur_epoch):
         preds = model(inputs)
         top1_err, top5_err = mu.topk_errors(preds, labels, [1, 5])
         top1_err = top1_err.item()
-        misclassifications += top1_err * inputs.size(0) * cfg.NUM_GPUS
-        totalSamples += inputs.size(0) * cfg.NUM_GPUS
+        misclassifications += top1_err * inputs.size(0)
+        totalSamples += inputs.size(0)
         test_meter.iter_toc()
-        test_meter.update_stats(top1_err=top1_err, mb_size=inputs.size(0) * cfg.NUM_GPUS)
+        test_meter.update_stats(top1_err=top1_err, mb_size=inputs.size(0))
         test_meter.log_iter_stats(cur_epoch, cur_iter)
         test_meter.iter_tic()
     test_meter.log_epoch_stats(cur_epoch)
